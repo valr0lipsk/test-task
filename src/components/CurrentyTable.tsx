@@ -3,6 +3,7 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import { CurrencyDetail } from '../services/types';
@@ -24,6 +25,7 @@ import {
 } from '@mui/material';
 import CatgirlExplainer from './CatgirlExplainer';
 import { useCatgirlExplainer } from '../services/catgirl';
+import ChangeCell from './ChangeCell';
 
 const columnHelper = createColumnHelper<CurrencyDetail>();
 
@@ -54,7 +56,11 @@ const columns = [
     header: () => <HeaderCellText align={'right'}>Daily High</HeaderCellText>,
   }),
   columnHelper.accessor('dailyChangePercent', {
-    cell: (info) => <Money>{info.getValue()}</Money>,
+    cell: (info) => (
+      <ChangeCell isPositive={info.getValue() > 0}>
+        {info.getValue()}
+      </ChangeCell>
+    ),
     header: () => <HeaderCellText align={'right'}>Change, %</HeaderCellText>,
   }),
   columnHelper.accessor('dailyLow', {
@@ -75,7 +81,7 @@ const CurrencyTable: React.FC = () => {
   }, []);
 
   const reloadTable = useCallback(() => {
-    alert('I do nothing');
+    getTickers(['BTC', 'ETH']).then(setData);
   }, []);
 
   const { isShown: isExplainerShown, toggle: toggleShowExplainer } =
@@ -84,6 +90,7 @@ const CurrencyTable: React.FC = () => {
   const table = useReactTable({
     data: data || [],
     columns,
+    getSortedRowModel: getSortedRowModel(),
     getCoreRowModel: getCoreRowModel(),
   });
 
@@ -115,7 +122,10 @@ const CurrencyTable: React.FC = () => {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableCell key={header.id}>
+                  <TableCell
+                    key={header.id}
+                    onClick={header.column.getToggleSortingHandler()}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
